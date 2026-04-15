@@ -11,4 +11,4 @@ lf1 = lf1.drop_duplicates().dropna(subset=['url'])
 df1 = df1[['url','type']].copy()
 
 df2 = df2[['url']].copy
-df2.clean['type'] = 'phishing'
+df2['type'] = 'phishing'
