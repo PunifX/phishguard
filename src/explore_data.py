@@ -24,6 +24,11 @@ df2['type'] = 'phishing'
 lf1 = lf1[['url']].copy()
 lf1['type'] = 'benign'
 
-print(df1['type'].value_counts(normalize=True),"\t",len(df1))
-print(df2['type'].value_counts(normalize=True),"\t",len(df2))
-print(lf1['type'].value_counts(normalize=True),"\t",len(lf1))
+#print(df1['type'].value_counts(normalize=True),"\t",len(df1))
+#print(df2['type'].value_counts(normalize=True),"\t",len(df2))
+#print(lf1['type'].value_counts(normalize=True),"\t",len(lf1))
+
+combined_data = pd.concat([df1,df2,lf1])
+combined_data = combined_data.drop_duplicates(subset=['url'])
+
+print(combined_data)
