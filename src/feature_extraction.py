@@ -1,24 +1,26 @@
 import pandas as pd
 import re
 from urllib.parse import urlparse
-import requests
+
 
 
 df = pd.read_csv('data/final_dataset.csv')
 
 def extract_features(url):
-
     counter_dots = 0
     counter_numbers = 0
     counter_paths = 0
-    
     symbols = 0
     fake_letters = 0
+    counter_hyphens=0
 
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url_http = "http://" + url
+    else:
+        url_http = url 
     features = {}
 
     features ['url_length'] = len(url)
-
 
     for i in url:  
         if i == '.':
@@ -27,8 +29,10 @@ def extract_features(url):
             counter_numbers= counter_numbers+ 1
         if i == '/':
             counter_paths=counter_paths + 1
-        if i in ["@",".","-","_","/","?","=","&","%",":"]:
-            synbols = symbols +1
+        if i == '-':
+            counter_hyphens =counter_hyphens +1
+        if i in ["@","_","?","=","&","%",":"]:
+            symbols = symbols +1
         if i in ["а","е","о","р","с","х"]:
             fake_letters = fake_letters + 1
 
@@ -42,7 +46,7 @@ def extract_features(url):
 
     features['is_an_ip'] = 1 if re.search(ip_pattern, url) else 0
 
-    parsed = urlparse(url)
+    parsed = urlparse(url_http)
     #print(parsed)
     
     hostname = parsed.netloc
@@ -56,11 +60,10 @@ def extract_features(url):
 
     features['num_subdomains'] = final
 
-    features ['num_hyphens']
-    features ['url_depth']
+    features ['num_hyphens'] = counter_hyphens
     
-    features ['has_at_symbol '] = symbols
-    features ['has_fake letters'] = fake_letters
+    features ['has_at_symbol'] = symbols
+    features ['has_fake_letters'] = fake_letters
     
     return features
     
