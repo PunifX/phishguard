@@ -44,6 +44,9 @@ benign_downsampled = resample(benign,
 final_file = pd.concat([phishing,benign_downsampled])
 
 final_file = final_file.drop_duplicates().dropna(subset=['url'])
+final_file = final_file.sample(frac=1,random_state=42).reset_index(drop=True)
+
+final_file.to_csv('data/final_dataset.csv',index=False)
 
 print(len(phishing))
 print(len(benign_downsampled))
