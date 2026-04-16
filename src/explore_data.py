@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.utils import resample
 
 df1 = pd.read_csv('data/malicious_phish.csv')
 df2 = pd.read_csv('data/malicious_phish2.csv')
@@ -31,4 +32,21 @@ lf1['type'] = 'benign'
 combined_data = pd.concat([df1,df2,lf1])
 combined_data = combined_data.drop_duplicates(subset=['url'])
 
-print(combined_data)
+
+benign = combined_data[combined_data['type']=='benign']
+phishing = combined_data[combined_data['type']=='phishing']
+benign_downsampled = resample(benign,
+                              n_samples=len(phishing),
+                              replace=False,
+                              random_state=42
+                              )
+
+final_file = pd.concat([phishing,benign_downsampled])
+
+final_file = final_file.drop_duplicates().dropna(subset=['url'])
+
+print(len(phishing))
+print(len(benign_downsampled))
+
+print(len(final_file))
+print(final_file.tail(10))
