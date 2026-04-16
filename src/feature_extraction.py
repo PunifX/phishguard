@@ -11,8 +11,9 @@ def extract_features(url):
     counter_numbers = 0
     counter_paths = 0
     symbols = 0
-    fake_letters = 0
     counter_hyphens=0
+    fake_letters_set = set("а е о р с х і ј ѕ ѵ".split())
+    fake_letters = 0
 
     if not url.startswith("http://") and not url.startswith("https://"):
         url_http = "http://" + url
@@ -33,9 +34,10 @@ def extract_features(url):
             counter_hyphens =counter_hyphens +1
         if i in ["@","_","?","=","&","%",":"]:
             symbols = symbols +1
-        if i in ["а","е","о","р","с","х"]:
-            fake_letters = fake_letters + 1
+        if i in fake_letters_set:
+                fake_letters += 1
 
+    
     features ['num_dots']  = counter_dots
 
     features['num_digits'] = counter_numbers
@@ -46,27 +48,30 @@ def extract_features(url):
 
     features['is_an_ip'] = 1 if re.search(ip_pattern, url) else 0
 
-    parsed = urlparse(url_http)
-    #print(parsed)
-    
-    hostname = parsed.netloc
+    try:
+        parsed = urlparse(url_http)
+        hostname = parsed.netloc
+    except ValueError:
+        hostname = ""
 
     if hostname == "":
         features['num_subdomains'] = 0
-        return features
     else:
         parts = hostname.split('.')
-        final = max(0,len(parts) - 2)
+        features['num_subdomains'] = max(0, len(parts) - 2)
 
-    features['num_subdomains'] = final
+    features['num_hyphens'] = counter_hyphens
+    features['has_symbols'] = symbols
+    #features['has_fake_letters'] = fake_letters
 
-    features ['num_hyphens'] = counter_hyphens
-    
-    features ['has_at_symbol'] = symbols
-    features ['has_fake_letters'] = fake_letters
-    
     return features
-    
-url = str(input())
-features = extract_features(url)
-print(features)
+
+df = pd.read_csv('data/final_dataset.csv')    
+print("Extracting features, this will take a few minutes...")
+
+feature_df = df['url'].apply(lambda url: pd.Series(extract_features(url)))
+
+final = pd.concat([df,feature_df],axis = 1)
+print(final.head())
+print(final.shape)
+final.to_csv('data/features_dataset.csv', index=False)
