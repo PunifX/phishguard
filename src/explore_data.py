@@ -48,8 +48,8 @@ final_file = final_file.sample(frac=1,random_state=42).reset_index(drop=True)
 
 final_file.to_csv('data/final_dataset.csv',index=False)
 
-print(len(phishing))
-print(len(benign_downsampled))
+print(len(phishing),"rows of phishing")
+print(len(benign_downsampled),"rows of benign")
 
-print(len(final_file))
+print(len(final_file),"rows of the whole file")
 print(final_file.tail(10))
