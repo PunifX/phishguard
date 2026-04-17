@@ -1,6 +1,8 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+import joblib
 
 df = pd.read_csv('data/features_dataset.csv')
 
@@ -24,3 +26,11 @@ print("testing rows:",len(x_test))
 
 model = RandomForestClassifier(n_estimators=100,random_state=42)
 model.fit(x_train,y_train)
+
+y_pred = model.predict(x_test)
+
+print(classification_report(y_test,y_pred))
+print(confusion_matrix(y_test,y_pred))
+
+joblib.dump(model, 'src/models/phishguard_model.pk1')
+print("model saved!")
