@@ -33,4 +33,3 @@ print(classification_report(y_test,y_pred))
 print(confusion_matrix(y_test,y_pred))
 
 joblib.dump(model, 'src/models/phishguard_model.pk1')
-print("model saved!")
