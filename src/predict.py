@@ -4,12 +4,15 @@ from urllib.parse import urlparse
 import joblib
 
 
-
 model = joblib.load('src/models/phishguard_model.pk1')
 
 
-
 def extract_features(url):
+    original_url = url
+    url = re.sub(r'^https?://', '', url)  # remove http:// or https://
+    url = re.sub(r'^www\.', '', url)       # remove www.
+    url = url.strip('/')                   # remove trailing slash
+
     counter_dots = 0
     counter_numbers = 0
     counter_paths = 0
@@ -18,15 +21,15 @@ def extract_features(url):
     fake_letters_set = set("а е о р с х і ј ѕ ѵ".split())
     fake_letters = 0
 
-    if not url.startswith("http://") and not url.startswith("https://"):
-        url_http = "http://" + url
+    if not original_url .startswith("http://") and not url.startswith("https://"):
+        url_http = "http://" + original_url 
     else:
-        url_http = url 
+        url_http = original_url  
     features = {}
 
-    features ['url_length'] = len(url)
+    features ['url_length'] = len(original_url)
 
-    for i in url:  
+    for i in original_url :  
         if i == '.':
             counter_dots = counter_dots + 1
         if i.isdigit():
@@ -49,7 +52,7 @@ def extract_features(url):
 
     ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
 
-    features['is_an_ip'] = 1 if re.search(ip_pattern, url) else 0
+    features['is_an_ip'] = 1 if re.search(ip_pattern, original_url ) else 0
 
     try:
         parsed = urlparse(url_http)
