@@ -7,8 +7,8 @@ from urllib.parse import urlparse
 df = pd.read_csv('data/final_dataset.csv')
 
 def extract_features(url):
-
-    original_url = url
+    original = url
+    
     url = re.sub(r'^https?://', '', url)  # remove http:// or https://
     url = re.sub(r'^www\.', '', url)       # remove www.
     url = url.strip('/')                   # remove trailing slash
@@ -28,6 +28,18 @@ def extract_features(url):
    
 
     features = {}
+    # Capture protocol BEFORE stripping
+     
+    if original.startswith('https://'):
+        features['is_https'] = 1
+    else:
+        features['is_https'] = 0
+
+    
+    if re.match(r'^https?://', original):
+        features['has_protocol'] = 1 
+    else:
+        features['has_protocol'] = 0
 
     features ['url_length'] = len(url)
 
@@ -41,7 +53,7 @@ def extract_features(url):
         if i == '-':
             counter_hyphens =counter_hyphens +1
         if i in ["@","_","?","=","&","%"]:
-            symbols = symbols +1
+            symbols += 1
         if i in fake_letters_set:
                 fake_letters += 1
 
@@ -52,7 +64,7 @@ def extract_features(url):
 
     features['num_paths'] = counter_paths
 
-    ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
+    ip_pattern = r'\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b'
 
     features['is_an_ip'] = 1 if re.search(ip_pattern, url) else 0
 
