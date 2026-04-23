@@ -13,8 +13,8 @@ def extract_features(url):
     url = re.sub(r'^www\.', '', url)       # remove www.
     url = url.strip('/')                   # remove trailing slash
 
-    domain_url = url
 
+    url_http = "http://" + url
     
 
     counter_dots = 0
@@ -25,10 +25,8 @@ def extract_features(url):
     fake_letters_set = set("а е о р с х і ј ѕ ѵ".split())
     fake_letters = 0
 
-    if not url.startswith("http://") and not url .startswith("https://"):
-        url_http = "http://" + url
-    else:
-        url_http = url
+   
+
     features = {}
 
     features ['url_length'] = len(url)
@@ -42,12 +40,12 @@ def extract_features(url):
             counter_paths=counter_paths + 1
         if i == '-':
             counter_hyphens =counter_hyphens +1
-        if i in ["@","_","?","=","&","%",":"]:
+        if i in ["@","_","?","=","&","%"]:
             symbols = symbols +1
         if i in fake_letters_set:
                 fake_letters += 1
 
-    
+
     features ['num_dots']  = counter_dots
 
     features['num_digits'] = counter_numbers
@@ -56,7 +54,7 @@ def extract_features(url):
 
     ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
 
-    features['is_an_ip'] = 1 if re.search(ip_pattern, original_url) else 0
+    features['is_an_ip'] = 1 if re.search(ip_pattern, url) else 0
 
     try:
         parsed = urlparse(url_http)
@@ -71,13 +69,13 @@ def extract_features(url):
         features['num_subdomains'] = max(0, len(parts) - 2)
 
     features['num_hyphens'] = counter_hyphens
-    features['has_symbols'] = symbols
+    features['has_suspicious_symbols'] = symbols
     #features['has_fake_letters'] = fake_letters
 
     return features
 
 df = pd.read_csv('data/final_dataset.csv')    
-print("Extracting features, this will take a few minutes...")
+
 
 feature_df = df['url'].apply(lambda url: pd.Series(extract_features(url)))
 
