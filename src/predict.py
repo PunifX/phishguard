@@ -3,15 +3,23 @@ import re
 from urllib.parse import urlparse
 import joblib
 
+#rndm forest model
+model_rndm_forest = joblib.load('src/models/phishguard_model.pkl')
 
-model = joblib.load('src/models/phishguard_model.pk1')
+#xgb forest
+model_xgb = joblib.load('src/models/phishguard_xgb_model.pkl')
 
 
 def extract_features(url):
-    original_url = url
+    original = url
+    
     url = re.sub(r'^https?://', '', url)  # remove http:// or https://
     url = re.sub(r'^www\.', '', url)       # remove www.
     url = url.strip('/')                   # remove trailing slash
+
+
+    url_http = "http://" + url
+    
 
     counter_dots = 0
     counter_numbers = 0
@@ -21,15 +29,25 @@ def extract_features(url):
     fake_letters_set = set("а е о р с х і ј ѕ ѵ".split())
     fake_letters = 0
 
-    if not original_url .startswith("http://") and not url.startswith("https://"):
-        url_http = "http://" + original_url 
-    else:
-        url_http = original_url  
+   
+
     features = {}
+    # Capture protocol BEFORE stripping
+     
+    if original.startswith('https://'):
+        features['is_https'] = 1
+    else:
+        features['is_https'] = 0
 
-    features ['url_length'] = len(original_url)
+    
+    if re.match(r'^https?://', original):
+        features['has_protocol'] = 1 
+    else:
+        features['has_protocol'] = 0
 
-    for i in original_url :  
+    features ['url_length'] = len(url)
+
+    for i in url:  
         if i == '.':
             counter_dots = counter_dots + 1
         if i.isdigit():
@@ -38,21 +56,21 @@ def extract_features(url):
             counter_paths=counter_paths + 1
         if i == '-':
             counter_hyphens =counter_hyphens +1
-        if i in ["@","_","?","=","&","%",":"]:
-            symbols = symbols +1
+        if i in ["@","_","?","=","&","%"]:
+            symbols += 1
         if i in fake_letters_set:
                 fake_letters += 1
 
-    
+
     features ['num_dots']  = counter_dots
 
     features['num_digits'] = counter_numbers
 
     features['num_paths'] = counter_paths
 
-    ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
+    ip_pattern = r'\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b'
 
-    features['is_an_ip'] = 1 if re.search(ip_pattern, original_url ) else 0
+    features['is_an_ip'] = 1 if re.search(ip_pattern, url) else 0
 
     try:
         parsed = urlparse(url_http)
@@ -67,7 +85,7 @@ def extract_features(url):
         features['num_subdomains'] = max(0, len(parts) - 2)
 
     features['num_hyphens'] = counter_hyphens
-    features['has_symbols'] = symbols
+    features['has_suspicious_symbols'] = symbols
     #features['has_fake_letters'] = fake_letters
 
     return features
@@ -79,11 +97,23 @@ while True:
         break
     features = extract_features(url)
     x = pd.DataFrame([features])
-    prediction = model.predict(x)[0]
-    probability = model.predict_proba(x)[0]
-        
-    print(f"Prediction: {prediction.upper()}")
-    print(f"Confidence: {max(probability)*100:.1f}%")
 
+    prediction_rndmforest = model_rndm_forest.predict(x)[0]
+    probability_rndmforest= model_rndm_forest.predict_proba(x)[0]
+
+    print("random forest predection:")    
+    print(f"Prediction: {prediction_rndmforest.upper()}")
+    print(f"Confidence: {max(probability_rndmforest)*100:.1f}%")
+
+    prediction_xgb = model_xgb.predict(x)[0]
+
+    label_xgb = "PHISHING" if prediction_xgb == 1 else "BENIGN"
+    
+    probability_xgb= model_xgb.predict_proba(x)[0]
+
+
+    print("xgb predection:")    
+    print(f"Prediction: {label_xgb}")
+    print(f"Confidence: {max(probability_xgb)*100:.1f}%")
 
     
