@@ -9,6 +9,8 @@ model_rndm_forest = joblib.load('src/models/phishguard_model.pkl')
 #xgb forest
 model_xgb = joblib.load('src/models/phishguard_xgb_model.pkl')
 
+#linear regression
+model_lr = joblib.load('src/models/phishguard_linear_reg_model.pkl')
 
 def extract_features(url):
     original = url
@@ -97,13 +99,18 @@ while True:
         break
     features = extract_features(url)
     x = pd.DataFrame([features])
-
+    #prediction random forest
     prediction_rndmforest = model_rndm_forest.predict(x)[0]
     probability_rndmforest= model_rndm_forest.predict_proba(x)[0]
 
     print("random forest predection:")    
     print(f"Prediction: {prediction_rndmforest.upper()}")
     print(f"Confidence: {max(probability_rndmforest)*100:.1f}%")
+
+    print("\n------------------------------------")
+
+    
+    #prediction xgb
 
     prediction_xgb = model_xgb.predict(x)[0]
 
@@ -116,4 +123,15 @@ while True:
     print(f"Prediction: {label_xgb}")
     print(f"Confidence: {max(probability_xgb)*100:.1f}%")
 
+    print("\n------------------------------------")
+
+    #prediction linear regression
+
+    prediction_lr = model_lr.predict(x)[0]
+    probability_lr = model_lr.predict_proba(x)[0]
+    print("Logistic Regression prediction:")
+    print(f"Prediction: {prediction_lr.upper()}")
+    print(f"Confidence: {max(probability_lr)*100:.1f}%")
+
     
+    print("\n------------------------------------")
