@@ -12,6 +12,8 @@ from xgboost import XGBClassifier
 
 from sklearn.svm import SVC
 
+from sklearn.linear_model import LogisticRegression
+
 
 df = pd.read_csv('data/features_dataset.csv')
 
@@ -62,6 +64,7 @@ print(confusion_matrix(y_test_num, xgb_pred))
 
 joblib.dump(xgb_model, 'src/models/phishguard_xgb_model.pkl')
 
+#it takes so long and it even crashed
 
 
 #x_train_svm = x_train
@@ -73,3 +76,14 @@ joblib.dump(xgb_model, 'src/models/phishguard_xgb_model.pkl')
 
 #print("SVM results")
 #print(classification_report(y_test, svm_pred))
+
+
+#linear regression
+
+lr_model = LogisticRegression(random_state=42, max_iter=1000)
+lr_model.fit(x_train, y_train)
+lr_pred = lr_model.predict(x_test)
+print("Logistic Regression results:")
+print(classification_report(y_test, lr_pred))
+
+joblib.dump(lr_model,'src/models/phishguard_linear_reg_model.pkl')

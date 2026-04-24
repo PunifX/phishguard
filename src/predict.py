@@ -34,16 +34,16 @@ def extract_features(url):
     features = {}
     # Capture protocol BEFORE stripping
      
-    if original.startswith('https://'):
-        features['is_https'] = 1
-    else:
-        features['is_https'] = 0
+    #if original.startswith('https://'):
+        #features['is_https'] = 1
+    #else:
+        #features['is_https'] = 0
 
     
-    if re.match(r'^https?://', original):
-        features['has_protocol'] = 1 
-    else:
-        features['has_protocol'] = 0
+    #if re.match(r'^https?://', original):
+        #features['has_protocol'] = 1 
+    #else:
+        #features['has_protocol'] = 0
 
     features ['url_length'] = len(url)
 
