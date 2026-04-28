@@ -1,16 +1,23 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, url_for
 import pandas as pd
 import re
 from urllib.parse import urlparse
 import joblib
+import os
 
-app = Flask(__name__)
+# Get the directory of the current file
+basedir = os.path.dirname(os.path.abspath(__file__))
+
+# Create Flask app with proper static and template folders
+app = Flask(__name__, 
+            template_folder=os.path.join(basedir, 'templates'),
+            static_folder=os.path.join(basedir, 'static'))
 
 # Load all 3 models when server starts to aovid reloading it everytime someone enters an url
 
-model_rf  = joblib.load('src/models/phishguard_model.pkl')
-model_xgb = joblib.load('src/models/phishguard_xgb_model.pkl')
-model_lr  = joblib.load('src/models/phishguard_linear_reg_model.pkl')
+model_rf  = joblib.load(os.path.join(basedir, 'models', 'phishguard_model.pkl'))
+model_xgb = joblib.load(os.path.join(basedir, 'models', 'phishguard_xgb_model.pkl'))
+model_lr  = joblib.load(os.path.join(basedir, 'models', 'phishguard_linear_reg_model.pkl'))
 
 def extract_features(url):
     
@@ -117,6 +124,7 @@ def home():
     return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
+
 def predict():
     
     data = request.get_json()
@@ -125,28 +133,25 @@ def predict():
     if not url:
         return jsonify({'error': 'No URL provided'}), 400
 
-    # Extract features
     features = extract_features(url)
     x        = pd.DataFrame([features])
 
-    # Run all 3 models
     # Random Forest
-    rf_pred  = model_rf.predict(x)[0]
+    rf_pred  = str(model_rf.predict(x)[0])
     rf_proba = model_rf.predict_proba(x)[0]
-    rf_conf  = round(max(rf_proba) * 100, 1)
+    rf_conf  = round(float(max(rf_proba)) * 100, 1)
 
-    # XGBoost 
+    # XGBoost
     xgb_pred_num = model_xgb.predict(x)[0]
     xgb_pred     = 'phishing' if xgb_pred_num == 1 else 'benign'
     xgb_proba    = model_xgb.predict_proba(x)[0]
-    xgb_conf     = round(max(xgb_proba) * 100, 1)
+    xgb_conf     = round(float(max(xgb_proba)) * 100, 1)
 
     # Logistic Regression
-    lr_pred  = model_lr.predict(x)[0]
+    lr_pred  = str(model_lr.predict(x)[0])
     lr_proba = model_lr.predict_proba(x)[0]
-    lr_conf  = round(max(lr_proba) * 100, 1)
+    lr_conf  = round(float(max(lr_proba)) * 100, 1)
 
-    # Get suspicious reasons for XAI
     reasons = get_suspicious_reasons(features)
 
     return jsonify({
@@ -155,7 +160,7 @@ def predict():
             'random_forest': {
                 'prediction': rf_pred,
                 'confidence': rf_conf,
-                'recommended': True  # This is the recommended model
+                'recommended': True
             },
             'xgboost': {
                 'prediction': xgb_pred,
@@ -169,8 +174,8 @@ def predict():
             }
         },
         'reasons': reasons,
-        'features': features
+        'features': {k: int(v) if isinstance(v, (int,)) else float(v) for k, v in features.items()}
     })
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0')

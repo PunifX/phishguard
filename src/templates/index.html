@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishGuard — URL Security Scanner</title>
+
+    <!--importing fonts -->
+
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons (shield, check, warning etc) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="/static/style.css">
+
+</head>
+
+<body>
+
+    <!--NAVBAR-->
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fas fa-shield-halved"></i>
+            PhishGuard
+        </div>
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            3 Models Active
+        </div>
+    </nav>
+
+    <!--HERO-->
+    <section class="hero">
+        <div class="hero-tag">AI-Powered Security Scanner</div>
+        <h1>Detect <span>Phishing URLs</span><br>Before They Detect You</h1>
+        <p>Paste any URL below and our 3 machine learning models will analyze it instantly.</p>
+
+        <div class="search-container">
+            <div class="search-box">
+                <div class="search-icon"><i class="fas fa-link"></i></div>
+                <input 
+                    type="text" 
+                    id="urlInput" 
+                    placeholder="https://example.com or paste any suspicious URL..."
+                    autocomplete="off"
+                    spellcheck="false"
+                />
+                <button id="scanBtn" onclick="scanURL()">
+                    <i class="fas fa-radar"></i> Scan URL
+                </button>
+            </div>
+            <p class="hint">Press Enter or click Scan — works with or without https://</p>
+        </div>
+    </section>
+
+    <!--RESULTS-->
+    <main class="main">
+        <div class="results-section" id="results">
+
+            <!-- Big verdict at top -->
+            <div class="verdict-card" id="verdictCard">
+                <div class="verdict-icon" id="verdictIcon">
+                    <i id="verdictIconI" class="fas fa-shield-halved"></i>
+                </div>
+                <div class="verdict-text">
+                    <h2 id="verdictTitle">—</h2>
+                    <p  id="verdictSub">—</p>
+                </div>
+                <div class="verdict-url" id="verdictUrl">—</div>
+            </div>
+
+            <!-- Models + Reasons side by side -->
+            <div class="grid-2">
+
+                <!-- Model results card -->
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fas fa-microchip"></i> Model Results
+                    </div>
+                    <div id="modelResults"><!-- filled by JS --></div>
+                </div>
+
+                <!-- XAI Reasons card -->
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fas fa-magnifying-glass"></i> Why This Result?
+                    </div>
+                    <div id="reasonsList"><!-- filled by JS --></div>
+                </div>
+
+            </div>
+
+            <!-- Feature breakdown at bottom -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-chart-bar"></i> Feature Analysis
+                </div>
+                <div class="features-grid" id="featuresGrid"><!-- filled by JS --></div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Allow pressing Enter to scan
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') scanURL();
+        });
+
+        async function scanURL() {
+            const url = document.getElementById('urlInput').value.trim();
+            if (!url) return;
+
+            // Show loading state on button
+            const btn = document.getElementById('scanBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            try {
+                // Send URL to Flask /predict endpoint
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await response.json();
+                displayResults(data);
+
+            } catch (err) {
+                alert('Error connecting to server. Make sure Flask is running.');
+            } finally {
+                // Reset button
+                btn.innerHTML = '<i class="fas fa-radar"></i> Scan URL';
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
+        function displayResults(data) {
+            // Show the results section
+            document.getElementById('results').style.display = 'block';
+
+            // Scroll to results smoothly
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+
+            // The recommended model (Random Forest) decides the final verdict
+            const finalPrediction = data.models.random_forest.prediction;
+            const isSafe = finalPrediction === 'benign';
+
+            // ---- VERDICT CARD ----
+            const card = document.getElementById('verdictCard');
+            card.className = `verdict-card ${isSafe ? 'safe' : 'phishing'}`;
+            document.getElementById('verdictIcon').className = `verdict-icon`;
+            document.getElementById('verdictIconI').className = isSafe 
+                ? 'fas fa-shield-check' 
+                : 'fas fa-triangle-exclamation';
+            document.getElementById('verdictTitle').textContent = isSafe 
+                ? 'This URL Appears Safe' 
+                : 'Phishing URL Detected!';
+            document.getElementById('verdictSub').textContent = isSafe
+                ? 'No suspicious patterns detected by the recommended model'
+                : 'This URL shows signs of phishing activity — do not visit';
+            document.getElementById('verdictUrl').textContent = data.url;
+
+            // ---- MODEL RESULTS ----
+            const models = [
+                { key: 'random_forest',       label: 'Random Forest',       recommended: true  },
+                { key: 'xgboost',             label: 'XGBoost',             recommended: false },
+                { key: 'logistic_regression', label: 'Logistic Regression', recommended: false }
+            ];
+
+            let modelsHTML = '';
+            models.forEach(m => {
+                const result = data.models[m.key];
+                const safe   = result.prediction === 'benign';
+                modelsHTML += `
+                    <div class="model-item">
+                        ${m.recommended ? '<span class="recommended-badge">★ Recommended</span>' : ''}
+                        <span class="model-name">${m.label}</span>
+                        <div class="model-right">
+                            <span class="confidence">${result.confidence}%</span>
+                            <span class="pill ${safe ? 'safe' : 'phishing'}">
+                                ${safe ? 'Safe' : 'Phishing'}
+                            </span>
+                        </div>
+                    </div>`;
+            });
+            document.getElementById('modelResults').innerHTML = modelsHTML;
+
+            // ---- REASONS (XAI) ----
+            let reasonsHTML = '';
+            data.reasons.forEach(r => {
+                const isOk = r.includes('No specific');
+                reasonsHTML += `
+                    <div class="reason-item ${isOk ? 'ok' : ''}">
+                        <i class="fas ${isOk ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i>
+                        <span>${r}</span>
+                    </div>`;
+            });
+            document.getElementById('reasonsList').innerHTML = reasonsHTML;
+
+            // ---- FEATURES GRID ----
+            const featureLabels = {
+                url_length:              'URL Length',
+                num_dots:                'Dots',
+                num_digits:              'Digits',
+                num_paths:               'Path Depth',
+                num_hyphens:             'Hyphens',
+                is_an_ip:                'Is IP',
+                num_subdomains:          'Subdomains',
+                has_suspicious_symbols:  'Symbols'
+            };
+
+            let featuresHTML = '';
+            Object.entries(data.features).forEach(([key, val]) => {
+                featuresHTML += `
+                    <div class="feature-item">
+                        <div class="feature-label">${featureLabels[key] || key}</div>
+                        <div class="feature-value">${val}</div>
+                    </div>`;
+            });
+            document.getElementById('featuresGrid').innerHTML = featuresHTML;
+        }
+    </script>
+
+</body>
+</html>
