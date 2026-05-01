@@ -155,8 +155,8 @@
             card.className = `verdict-card ${isSafe ? 'safe' : 'phishing'}`;
             document.getElementById('verdictIcon').className = `verdict-icon`;
             document.getElementById('verdictIconI').className = isSafe 
-                ? 'fas fa-shield-check' 
-                : 'fas fa-triangle-exclamation';
+                ? 'fa-solid fa-shield-check' 
+                : 'fa fa-exclamation-triangle';
             document.getElementById('verdictTitle').textContent = isSafe 
                 ? 'This URL Appears Safe' 
                 : 'Phishing URL Detected!';
