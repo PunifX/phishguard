@@ -70,6 +70,12 @@ if (
       `;
     }
   })
-  .catch(() => banner.remove());
+  .catch((err) => {
+  const text = document.getElementById("phishguard-text");
+  if (text) {
+    banner.style.borderBottom = "2px solid #ffaa00";
+    text.innerHTML = "⚠️ PhishGuard could not reach the server";
+  }
+    });
 
 }

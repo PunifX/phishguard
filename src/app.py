@@ -6,6 +6,9 @@ import joblib
 import os
 import requests
 from pathlib import Path
+from flask_cors import CORS
+
+
 
 
 basedir = os.path.dirname(os.path.abspath(__file__))
@@ -15,6 +18,7 @@ app = Flask(__name__,
             template_folder=os.path.join(basedir, 'templates'),
             static_folder=os.path.join(basedir, 'static'))
 
+CORS(app)
 # Model loading from HuggingFace 
 
 HF_BASE = "https://huggingface.co/PunifX/phishguard-models/resolve/main"
