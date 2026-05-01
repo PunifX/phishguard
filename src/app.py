@@ -4,8 +4,10 @@ import re
 from urllib.parse import urlparse
 import joblib
 import os
+import requests
+from pathlib import Path
 
-# Get the directory of the current file
+
 basedir = os.path.dirname(os.path.abspath(__file__))
 
 # Create Flask app with proper static and template folders
@@ -13,11 +15,39 @@ app = Flask(__name__,
             template_folder=os.path.join(basedir, 'templates'),
             static_folder=os.path.join(basedir, 'static'))
 
-# Load all 3 models when server starts to aovid reloading it everytime someone enters an url
+# Model loading from HuggingFace 
 
-model_rf  = joblib.load(os.path.join(basedir, 'models', 'phishguard_model.pkl'))
-model_xgb = joblib.load(os.path.join(basedir, 'models', 'phishguard_xgb_model.pkl'))
-model_lr  = joblib.load(os.path.join(basedir, 'models', 'phishguard_linear_reg_model.pkl'))
+HF_BASE = "https://huggingface.co/PunifX/phishguard-models/resolve/main"
+
+MODEL_FILES = {
+    "rf":  "phishguard_model.pkl",
+    "xgb": "phishguard_xgb_model.pkl",
+    "lr":  "phishguard_linear_reg_model.pkl",
+}
+
+CACHE_DIR = Path(basedir) / "models_cache"
+CACHE_DIR.mkdir(exist_ok=True)
+
+def load_model(filename):
+    local_path = CACHE_DIR / filename
+    if not local_path.exists():
+        print(f"Downloading {filename} from HuggingFace")
+        r = requests.get(f"{HF_BASE}/{filename}", stream=True)
+        r.raise_for_status()
+        with open(local_path, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print(f" {filename} cached.")
+    else:
+        print(f" {filename} loaded from cache.")
+    return joblib.load(local_path)
+
+print("Loading models...")
+model_rf  = load_model(MODEL_FILES["rf"])
+model_xgb = load_model(MODEL_FILES["xgb"])
+model_lr  = load_model(MODEL_FILES["lr"])
+print("All models ready.")
+
 
 def extract_features(url):
     
