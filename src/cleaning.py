@@ -1,9 +1,9 @@
 import pandas as pd
 from sklearn.utils import resample
 
-file1 = pd.read_csv(r"d:\codes\project\AI\improved version of phishguard\data\raw\legit_sites.csv")
-file2 = pd.read_csv(r"D:\codes\project\AI\improved version of phishguard\data\raw\phishing_site_urls.csv")
-file3 = pd.read_csv(r"d:\codes\project\AI\improved version of phishguard\data\raw\malicious_phish2.csv")
+file1 = pd.read_csv(r"d:\codes\project\AI\phishguard\data\raw\legit_sites.csv")
+file2 = pd.read_csv(r"D:\codes\project\AI\phishguard\data\raw\phishing_site_urls.csv")
+file3 = pd.read_csv(r"d:\codes\project\AI\phishguard\data\raw\malicious_phish2.csv")
 
 
 file1['type'] = 'safe'
@@ -49,4 +49,4 @@ print(final_data_frame.head(),"\n",final_data_frame.shape,"\n","dups:",final_dat
 print(final_data_frame["type"].value_counts())
 print(final_data_frame["type"].value_counts(normalize=True)) 
 
-final_data_frame.to_csv(r"D:\codes\project\AI\improved version of phishguard\data\processed\final_data_frame.csv",index=False)
+final_data_frame.to_csv(r"D:\codes\project\AI\phishguard\data\processed\final_data_frame.csv",index=False)

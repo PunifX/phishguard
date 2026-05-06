@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
-data_frame = pd.read_csv(r"D:\codes\project\AI\improved version of phishguard\data\processed\final_data_frame.csv")
+data_frame = pd.read_csv(r"D:\codes\project\AI\phishguard\data\processed\final_data_frame.csv")
 urls = data_frame["url"]
 prediction = data_frame["type"]
 features  = pd.DataFrame()
@@ -95,7 +95,7 @@ def extraction_hyper_link_and_textual(urls, start_from=0):
         for i, result in enumerate(executor.map(fetch_one, urls_list)):
             results.append(result)
             if i % 10000 == 0:
-                pd.DataFrame(results).to_csv(r"D:\codes\project\AI\improved version of phishguard\output\features\hyper_textual_features.csv", index=False)
+                pd.DataFrame(results).to_csv(r"D:\codes\project\AI\phishguard\output\features\hyper_textual_features.csv", index=False)
                 print(f"Progress: {start_from + i}/{len(urls)}")
     
     extraction_hyper_link_and_textual= pd.DataFrame(results)
@@ -137,7 +137,7 @@ def extraction_dns(urls,start_from=0):
         for i, result in enumerate(executor.map(fetch_one_dns, urls_list)):
             results.append(result)
             if i % 10000 == 0:
-                pd.DataFrame(results).to_csv(r"D:\codes\project\AI\improved version of phishguard\output\features\dns_features.csv", index=False)
+                pd.DataFrame(results).to_csv(r"D:\codes\project\AI\phishguard\output\features\dns_features.csv", index=False)
                 print(f"Progress: {start_from + i}/{len(urls)}")
     
     extraction_dns = pd.DataFrame(results)
@@ -149,17 +149,17 @@ url_patterns_features = extraction_url_patterns(urls)
 
 #e_h_l_a_t = extraction_hyper_link_and_textual(urls)
 #e_h_l_a_t = extraction_hyper_link_and_textual(urls, start_from=x)
-#e_h_l_a_t = pd.read_csv(r"D:\codes\project\AI\improved version of phishguard\output\features\hyper_textual_features.csv")
+#e_h_l_a_t = pd.read_csv(r"D:\codes\project\AI\phishguard\output\features\hyper_textual_features.csv")
 
 #dns_features  =  extraction_dns(urls)
 #dns_features = extraction_dns(urls, start_from=x)
-dns_features =pd.read_csv(r"D:\codes\project\AI\improved version of phishguard\output\features\dns_final.csv")
+dns_features =pd.read_csv(r"D:\codes\project\AI\phishguard\output\features\dns_final.csv")
 
 
 features = pd.concat([urls,url_patterns_features,dns_features], axis=1)
 #features = pd.concat([url_patterns_features,e_h_l_a_t,dns_features], axis=1)
-features.to_csv(r"D:\codes\project\AI\improved version of phishguard\output\features\features_final.csv")
-#prediction.to_csv(r"D:\codes\project\AI\improved version of phishguard\output\features\prediction")
+features.to_csv(r"D:\codes\project\AI\phishguard\output\features\features_final.csv")
+#prediction.to_csv(r"D:\codes\project\AI\phishguard\output\features\prediction")
 
 
 
