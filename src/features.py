@@ -3,6 +3,8 @@ import requests as r
 from bs4 import BeautifulSoup as bs
 from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor
+import dns.resolver
+import dns.exception
 
 data_frame = pd.read_csv(r"D:\codes\project\AI\improved version of phishguard\data\processed\final_data_frame.csv")
 urls = data_frame["url"]
@@ -81,37 +83,75 @@ def fetch_one(url):
             "has_favicon": 0, "has_meta": 0
         }
 
-
-def extraction_hyper_link_and_textual(urls):
+def extraction_hyper_link_and_textual(urls, start_from=0):
     results = []
+    urls_list = list(urls)[start_from:]
+
     with ThreadPoolExecutor(max_workers=100) as executor:
-        for i, result in enumerate(executor.map(fetch_one, urls)):
+        for i, result in enumerate(executor.map(fetch_one, urls_list)):
             results.append(result)
             if i % 10000 == 0:
                 pd.DataFrame(results).to_csv(r"D:\codes\project\AI\improved version of phishguard\output\features\hyper_textual_features.csv", index=False)
-                print(f"Progress: {i}/{len(urls)}")
+                print(f"Progress: {start_from + i}/{len(urls)}")
     
     extraction_hyper_link_and_textual= pd.DataFrame(results)
     return extraction_hyper_link_and_textual
 
- 
-def extraction_dns(urls):
+def fetch_one_dns(url):
+    try:
+        domain = urlparse(url).netloc
+        try:
+            
+            a_records = dns.resolver.resolve(domain,"A")
+            has_a = 1
+            ttl = a_records.rrset.ttl
+        except:
+            has_a = 0
+            ttl = 0
+        
+        try:
+            dns.resolver.resolve(domain,"MX")
+            has_mx = 1
+        except:
+            has_mx = 0
+
+        try:
+            txt_records = dns.resolver.resolve(domain, "TXT")
+            has_spf = 1 if any("spf" in str(record).lower() for record in txt_records) else 0
+        except:
+            has_spf = 0
+
+        return {"has_a": has_a, "ttl": ttl, "has_mx": has_mx, "has_spf": has_spf}
     
-    extraction_dns = pd.DataFrame()
+    except:
+        return {"has_a":0,"ttl":0,"has_mx":0,"has_spf":0 }    
 
-
+def extraction_dns(urls,start_from=0):
+    results = []
+    urls_list = list(urls)[start_from:]
+    with ThreadPoolExecutor(max_workers=100) as executor:
+        for i, result in enumerate(executor.map(fetch_one_dns, urls_list)):
+            results.append(result)
+            if i % 10000 == 0:
+                pd.DataFrame(results).to_csv(r"D:\codes\project\AI\improved version of phishguard\output\features\dns_features.csv", index=False)
+                print(f"Progress: {start_from + i}/{len(urls)}")
+    
+    extraction_dns = pd.DataFrame(results)
     return extraction_dns
 
 
 url_patterns_features = extraction_url_patterns(urls)
 e_h_l_a_t = extraction_hyper_link_and_textual(urls)
+#e_h_l_a_t = extraction_hyper_link_and_textual(urls, start_from=x)
 #e_h_l_a_t = pd.read_csv(r"D:\codes\project\AI\improved version of phishguard\output\features\hyper_textual_features.csv")
 dns_features  =  extraction_dns(urls)
+#dns_features = extraction_dns(urls, start_from=x)
+#dns_features =pd.read_csv(r"D:\codes\project\AI\improved version of phishguard\output\features\dns_features.csvv")
 
 
 #features = pd.concat([urls,url_patterns_features,hyper_link_features,textual_content_features,dns_features], axis=1)
 features = pd.concat([url_patterns_features,e_h_l_a_t,dns_features], axis=1)
-#features.to_csv(r"D:\codes\project\AI\improved version of phishguard\output\features\features.csv")
+features.to_csv(r"D:\codes\project\AI\improved version of phishguard\output\features\features.csv")
 #prediction.to_csv(r"D:\codes\project\AI\improved version of phishguard\output\features\prediction")
 
 
