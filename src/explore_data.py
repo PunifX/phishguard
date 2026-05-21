@@ -1,0 +1,55 @@
+import pandas as pd
+from sklearn.utils import resample
+
+df1 = pd.read_csv('data/malicious_phish.csv')
+df2 = pd.read_csv('data/malicious_phish2.csv')
+lf1 = pd.read_csv('data/legit_sites.csv')
+
+df1 = df1.drop_duplicates().dropna(subset=['url'])
+df2 = df2.drop_duplicates().dropna(subset=['url'])
+lf1 = lf1.drop_duplicates().dropna(subset=['url'])
+
+df1 = df1[['url','type']].copy()
+
+df1['type'] = df1['type'].map({
+    'benign' : 'benign',
+    'phishing': 'phishing',
+    'defacement': 'phishing',
+    'malware': 'phishing',
+})
+
+
+df2 = df2[['url']].copy()
+df2['type'] = 'phishing'
+
+lf1 = lf1[['url']].copy()
+lf1['type'] = 'benign'
+
+#print(df1['type'].value_counts(normalize=True),"\t",len(df1))
+#print(df2['type'].value_counts(normalize=True),"\t",len(df2))
+#print(lf1['type'].value_counts(normalize=True),"\t",len(lf1))
+
+combined_data = pd.concat([df1,df2,lf1])
+combined_data = combined_data.drop_duplicates(subset=['url'])
+
+
+benign = combined_data[combined_data['type']=='benign']
+phishing = combined_data[combined_data['type']=='phishing']
+benign_downsampled = resample(benign,
+                              n_samples=len(phishing),
+                              replace=False,
+                              random_state=42
+                              )
+
+final_file = pd.concat([phishing,benign_downsampled])
+
+final_file = final_file.drop_duplicates().dropna(subset=['url'])
+final_file = final_file.sample(frac=1,random_state=42).reset_index(drop=True)
+
+final_file.to_csv('data/final_dataset.csv',index=False)
+
+print(len(phishing),"rows of phishing")
+print(len(benign_downsampled),"rows of benign")
+
+print(len(final_file),"rows of the whole file")
+print(final_file.tail(10))
